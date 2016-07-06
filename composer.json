@@ -1,0 +1,21 @@
+{
+  "name": "dom-arch/indoctrinated",
+  "description": "Some utilities for Doctrine2 ORM",
+  "version": "1.0.0"
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Lcfvs",
+      "email": "michael.rouges@gmail.com"
+    }
+  ],
+  "require": {
+    "php": ">=7.*",
+    "doctrine/orm": "2.5.*"
+  },
+  "autoload": {
+    "psr-4": {
+      "Indoctrinated\\": "lib"
+    }
+  }
+}
