@@ -1,7 +1,6 @@
 {
   "name": "dom-arch/indoctrinated",
   "description": "Some utilities for Doctrine2 ORM",
-  "version": "1.0.0",
   "license": "MIT",
   "authors": [
     {
