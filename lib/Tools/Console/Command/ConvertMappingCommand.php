@@ -102,6 +102,7 @@ class ConvertMappingCommand
 
         if (count($metadata)) {
             foreach ($metadata as $class) {
+                $class->name = $class->table['name'];
                 $output->writeln(sprintf('Processing entity "<info>%s</info>"', $class->name));
             }
 
