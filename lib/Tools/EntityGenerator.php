@@ -52,6 +52,36 @@ class EntityGenerator
     /**
      * @var string
      */
+    protected static $traitTemplate =
+        '<?php
+
+<namespace>
+
+<entityTraitName>
+{
+}';
+
+    /**
+     * @var string
+     */
+    protected static $classTemplate =
+        '<?php
+
+<namespace>
+
+<useStatement>
+
+<entityAnnotation>
+<entityClassName>
+{
+<spaces><entityTraitName>;
+
+<entityBody>
+}';
+
+    /**
+     * @var string
+     */
     protected static $getIdMethodTemplate =
         '/**
  * <description>
@@ -404,5 +434,76 @@ public function <methodName>(
         }
 
         return implode("\n", $code);
+    }
+
+
+
+    /**
+     * Generates a PHP5 Doctrine 2 entity class from the given ClassMetadataInfo instance.
+     *
+     * @param ClassMetadataInfo $metadata
+     *
+     * @return string
+     */
+    public function generateEntityClass(ClassMetadataInfo $metadata)
+    {
+        $placeHolders = array(
+            '<namespace>',
+            '<useStatement>',
+            '<entityAnnotation>',
+            '<entityClassName>',
+            '<entityTraitName>',
+            '<entityBody>'
+        );
+
+        $replacements = array(
+            $this->generateEntityNamespace($metadata),
+            $this->generateEntityUse(),
+            $this->generateEntityDocBlock($metadata),
+            $this->generateEntityClassName($metadata),
+            'use Traits\\' . $this->getClassName($metadata),
+            $this->generateEntityBody($metadata)
+        );
+
+        $code = str_replace($placeHolders, $replacements, static::$classTemplate) . "\n";
+
+        return str_replace('<spaces>', $this->spaces, $code);
+    }
+
+    /**
+     * @param ClassMetadataInfo $metadata
+     *
+     * @return string
+     */
+    public function generateEntityTrait(ClassMetadataInfo $metadata)
+    {
+        $placeHolders = array(
+            '<namespace>',
+            '<entityTraitName>'
+        );
+
+        $replacements = array(
+            $this->generateEntityTraitNamespace($metadata),
+            'trait ' . $this->getClassName($metadata)
+        );
+
+        $code = str_replace($placeHolders, $replacements, static::$traitTemplate) . "\n";
+
+        return str_replace('<spaces>', $this->spaces, $code);
+    }
+
+    /**
+     * @param ClassMetadataInfo $metadata
+     * @return string
+     */
+    protected function generateEntityTraitNamespace(ClassMetadataInfo $metadata)
+    {
+        $namespace = '';
+
+        if ($this->hasNamespace($metadata)) {
+            $namespace = $this->getNamespace($metadata) .'\\';
+        }
+
+        return 'namespace ' . $namespace . 'Traits;';
     }
 }

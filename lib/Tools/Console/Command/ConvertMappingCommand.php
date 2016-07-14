@@ -70,7 +70,14 @@ class ConvertMappingCommand
         if ( ! is_dir($destPath = $input->getArgument('dest-path'))) {
             mkdir($destPath, 0775, true);
         }
+
+        // Process destination traits directory
+        if ( ! is_dir($traitsPath = ($input->getArgument('dest-path') . '/Traits'))) {
+            mkdir($traitsPath, 0775, true);
+        }
+
         $destPath = realpath($destPath);
+        $traitsPath = realpath($traitsPath);
 
         if ( ! file_exists($destPath)) {
             throw new \InvalidArgumentException(
@@ -81,6 +88,18 @@ class ConvertMappingCommand
         if ( ! is_writable($destPath)) {
             throw new \InvalidArgumentException(
                 sprintf("Mapping destination directory '<info>%s</info>' does not have write permissions.", $destPath)
+            );
+        }
+
+        if ( ! file_exists($traitsPath)) {
+            throw new \InvalidArgumentException(
+                sprintf("Mapping destination directory '<info>%s</info>' does not exist.", $input->getArgument('dest-path') . '/Traits')
+            );
+        }
+
+        if ( ! is_writable($traitsPath)) {
+            throw new \InvalidArgumentException(
+                sprintf("Mapping destination directory '<info>%s</info>' does not have write permissions.", $traitsPath)
             );
         }
 
@@ -102,6 +121,13 @@ class ConvertMappingCommand
 
         if (count($metadata)) {
             foreach ($metadata as $class) {
+                $class->name = $class->table['name'];
+                $traitPath = $traitsPath . '/' . $class->name . '.php';
+
+                if (isset($entityGenerator) && !is_file($traitPath)) {
+                    file_put_contents($traitPath, $entityGenerator->generateEntityTrait($class));
+                }
+
                 $output->writeln(sprintf('Processing entity "<info>%s</info>"', $class->name));
             }
 
