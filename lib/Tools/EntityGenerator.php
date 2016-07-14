@@ -72,7 +72,7 @@ class EntityGenerator
 
 <entityTraitName>
 {
-<spaces>protected static $ignoredColumns = [];
+<spaces><entityTraitBody>
 }';
 
     /**
@@ -493,12 +493,14 @@ public function <methodName>(
     {
         $placeHolders = array(
             '<namespace>',
-            '<entityTraitName>'
+            '<entityTraitName>',
+            '<entityTraitBody>'
         );
 
         $replacements = array(
             $this->generateEntityTraitNamespace($metadata),
-            'trait ' . $this->getClassName($metadata)
+            'trait ' . $this->getClassName($metadata),
+            $this->generateEntityTraitBody($metadata)
         );
 
         $code = str_replace($placeHolders, $replacements, static::$traitTemplate) . "\n";
@@ -556,5 +558,29 @@ public function <methodName>(
         }
 
         return 'namespace ' . $namespace . 'Validators;';
+    }
+
+
+
+    /**
+     * @param ClassMetadataInfo $metadata
+     *
+     * @return string
+     */
+    protected function generateEntityTraitBody(ClassMetadataInfo $metadata)
+    {
+        $lines = [];
+        $lines[] = 'protected static $printables = [';
+        $names = [];
+
+        foreach ($metadata->fieldMappings as $fieldMapping) {
+            $names[] = $this->spaces . $this->spaces . '\'' . $fieldMapping['columnName'] . '\'';
+        }
+
+        $lines[] = implode(",\n", $names);
+
+        $lines[] = $this->spaces . '];';
+
+        return implode("\n", $lines);
     }
 }
