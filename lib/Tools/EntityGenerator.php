@@ -52,6 +52,19 @@ class EntityGenerator
     /**
      * @var string
      */
+    protected static $validatorTemplate =
+        '<?php
+
+<namespace>
+
+<entityValidatorName>
+<spaces>extends Indoctrinated\Entity\Validator
+{
+}';
+
+    /**
+     * @var string
+     */
     protected static $traitTemplate =
         '<?php
 
@@ -506,5 +519,42 @@ public function <methodName>(
         }
 
         return 'namespace ' . $namespace . 'Traits;';
+    }
+
+    /**
+     * @param ClassMetadataInfo $metadata
+     *
+     * @return string
+     */
+    public function generateEntityValidator(ClassMetadataInfo $metadata)
+    {
+        $placeHolders = array(
+            '<namespace>',
+            '<entityValidatorName>'
+        );
+
+        $replacements = array(
+            $this->generateEntityTraitNamespace($metadata),
+            'class ' . $this->getClassName($metadata)
+        );
+
+        $code = str_replace($placeHolders, $replacements, static::$validatorTemplate) . "\n";
+
+        return str_replace('<spaces>', $this->spaces, $code);
+    }
+
+    /**
+     * @param ClassMetadataInfo $metadata
+     * @return string
+     */
+    protected function generateEntityValidatorNamespace(ClassMetadataInfo $metadata)
+    {
+        $namespace = '';
+
+        if ($this->hasNamespace($metadata)) {
+            $namespace = $this->getNamespace($metadata) .'\\';
+        }
+
+        return 'namespace ' . $namespace . 'Validators;';
     }
 }

@@ -66,41 +66,33 @@ class ConvertMappingCommand
         $metadata = $cmf->getAllMetadata();
         $metadata = MetadataFilter::filter($metadata, $input->getOption('filter'));
 
-        // Process destination directory
-        if ( ! is_dir($destPath = $input->getArgument('dest-path'))) {
-            mkdir($destPath, 0775, true);
-        }
+        $destPath = $input->getArgument('dest-path');
 
-        // Process destination traits directory
-        if ( ! is_dir($traitsPath = ($input->getArgument('dest-path') . '/Traits'))) {
-            mkdir($traitsPath, 0775, true);
-        }
+        $paths = [
+            'destPath' => $destPath,
+            'traitsPath' => $destPath . '/Traits',
+            'validatorsPath' => $destPath . '/Validators'
+        ];
 
-        $destPath = realpath($destPath);
-        $traitsPath = realpath($traitsPath);
+        foreach ($paths as $name => $path) {
+            // Process destination directory
+            if (!is_dir($path)) {
+                mkdir($path, 0775, true);
+            }
 
-        if ( ! file_exists($destPath)) {
-            throw new \InvalidArgumentException(
-                sprintf("Mapping destination directory '<info>%s</info>' does not exist.", $input->getArgument('dest-path'))
-            );
-        }
+            $$name = realpath($path);
 
-        if ( ! is_writable($destPath)) {
-            throw new \InvalidArgumentException(
-                sprintf("Mapping destination directory '<info>%s</info>' does not have write permissions.", $destPath)
-            );
-        }
+            if ( ! file_exists($$name)) {
+                throw new \InvalidArgumentException(
+                    sprintf("Mapping destination directory '<info>%s</info>' does not exist.", $$name)
+                );
+            }
 
-        if ( ! file_exists($traitsPath)) {
-            throw new \InvalidArgumentException(
-                sprintf("Mapping destination directory '<info>%s</info>' does not exist.", $input->getArgument('dest-path') . '/Traits')
-            );
-        }
-
-        if ( ! is_writable($traitsPath)) {
-            throw new \InvalidArgumentException(
-                sprintf("Mapping destination directory '<info>%s</info>' does not have write permissions.", $traitsPath)
-            );
+            if ( ! is_writable($$name)) {
+                throw new \InvalidArgumentException(
+                    sprintf("Mapping destination directory '<info>%s</info>' does not have write permissions.", $$name)
+                );
+            }
         }
 
         $toType = strtolower($input->getArgument('to-type'));
@@ -123,9 +115,16 @@ class ConvertMappingCommand
             foreach ($metadata as $class) {
                 $class->name = $class->table['name'];
                 $traitPath = $traitsPath . '/' . $class->name . '.php';
+                $validatorPath = $validatorsPath . '/' . $class->name . '.php';
 
-                if (isset($entityGenerator) && !is_file($traitPath)) {
-                    file_put_contents($traitPath, $entityGenerator->generateEntityTrait($class));
+                if (isset($entityGenerator)) {
+                    if (!is_file($traitPath)) {
+                        file_put_contents($traitPath, $entityGenerator->generateEntityTrait($class));
+                    }
+
+                    if (!is_file($validatorPath)) {
+                        file_put_contents($validatorPath, $entityGenerator->generateEntityValidator($class));
+                    }
                 }
 
                 $output->writeln(sprintf('Processing entity "<info>%s</info>"', $class->name));

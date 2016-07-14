@@ -187,6 +187,17 @@ abstract class Entity
             ->getRepository(static::class);
     }
 
+    public static function getFieldNames() : array
+    {
+        $properties = Db::getEntityManager()
+            ->getClassMetadata(static::getEntityName())
+            ->getFieldNames();
+
+        sort($properties);
+
+        return $properties;
+    }
+
     public static function fromArray(
         array $data
     ) : self
@@ -198,12 +209,18 @@ abstract class Entity
         stdClass $object
     ) : self
     {
+        $properties = static::getFieldNames();
+
         $instance = static::getEntityRepository()
             ->one();
 
         foreach ($object as $property => $value) {
             $method_name = 'init' . ucfirst($property);
             $method = [$instance, $method_name];
+
+            if (!in_array($property, $properties)) {
+                continue;
+            }
 
             if (in_array($property, static::$ignoredColumns)) {
                 continue;
@@ -249,11 +266,7 @@ abstract class Entity
 
     public function toObject() : stdClass
     {
-        $properties = Db::getEntityManager()
-            ->getClassMetadata(static::getEntityName())
-            ->getFieldNames();
-
-        sort($properties);
+        $properties = static::getFieldNames();
 
         $std = new stdClass();
 
@@ -323,5 +336,15 @@ abstract class Entity
         $time = Db::getTime() ?? new DateTime();
 
         return $this->setUpdatedAt($time);
+    }
+
+    public function validate()
+    {
+        $Validator = 'Validators\\' . static::class;
+        $vars = get_object_vars($this);
+        $fields = static::getFieldNames();
+        $validator = new $Validator($vars, $fields);
+
+        return $validator->validate();
     }
 }
