@@ -59,6 +59,7 @@ class EntityGenerator
 
 <entityTraitName>
 {
+<spaces>protected static $ignoredColumns = [];
 }';
 
     /**
