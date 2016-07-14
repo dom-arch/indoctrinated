@@ -73,6 +73,7 @@ class GenerateEntitiesCommand
             }
 
             foreach ($metadatas as $metadata) {
+                $metadata->name = $metadata->table['name'];
                 $output->writeln(
                     sprintf('Processing entity "<info>%s</info>"', $metadata->name)
                 );
