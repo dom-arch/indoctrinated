@@ -17,8 +17,6 @@ use Indoctrinated\Db;
  */
 abstract class Entity
 {
-    protected static $ignoredColumns = [];
-
     /**
      * @var integer
      *
