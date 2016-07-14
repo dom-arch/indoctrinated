@@ -187,6 +187,13 @@ abstract class Entity
             ->getRepository(static::class);
     }
 
+    public function getOriginalEntityData() : array
+    {
+        return Db::getEntityManager()
+            ->getUnitOfWork()
+            ->getOriginalEntityData($this);
+    }
+
     public static function getFieldNames() : array
     {
         $properties = Db::getEntityManager()
