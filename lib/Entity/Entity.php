@@ -17,6 +17,8 @@ use Indoctrinated\Db;
  */
 abstract class Entity
 {
+    protected static $ignoredColumns = [];
+
     /**
      * @var integer
      *
@@ -205,6 +207,10 @@ abstract class Entity
             $method_name = 'init' . ucfirst($property);
             $method = [$instance, $method_name];
 
+            if (in_array($property, static::$ignoredColumns)) {
+                continue;
+            }
+
             if (!is_callable($method, true)) {
                 continue;
             }
@@ -257,6 +263,10 @@ abstract class Entity
             $method_name = 'get' . ucfirst($property);
             $method = [$this, $method_name];
 
+            if (in_array($property, static::$ignoredColumns)) {
+                continue;
+            }
+
             if (!is_callable($method, true)) {
                 continue;
             }
@@ -292,12 +302,9 @@ abstract class Entity
         return $std;
     }
 
-    public function toJSON(
-        int $options = 0,
-        int $depth = 512
-    ) : string
+    public function toJSON() : string
     {
-        return json_encode($this->toObject(), $options, $depth);
+        return json_encode($this->toObject());
     }
 
     /** @ORM\PrePersist */
