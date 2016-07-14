@@ -534,7 +534,7 @@ public function <methodName>(
         );
 
         $replacements = array(
-            $this->generateEntityTraitNamespace($metadata),
+            $this->generateEntityValidatorNamespace($metadata),
             'class ' . $this->getClassName($metadata)
         );
 
