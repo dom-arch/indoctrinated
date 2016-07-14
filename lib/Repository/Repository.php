@@ -15,12 +15,13 @@ class Repository
     }
 
     public function selectBy(
-        array $parameters
+        array $parameters,
+        array $order_by = null
     )
     {
         $parameters['archivedAt'] = $parameters['archivedAt'] ?? null;
 
-        return $this->findOneBy($parameters);
+        return $this->findOneBy($parameters, $order_by);
     }
 
     public function selectAllBy(
