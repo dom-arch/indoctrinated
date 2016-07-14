@@ -58,7 +58,7 @@ class EntityGenerator
 <namespace>
 
 <entityValidatorName>
-<spaces>extends Indoctrinated\Entity\Validator
+<spaces>extends \\Indoctrinated\Entity\Validator
 {
 }';
 
