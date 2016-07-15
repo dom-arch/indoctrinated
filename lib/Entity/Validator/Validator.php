@@ -57,4 +57,20 @@ abstract class Validator
     {
         return $this->_errors;
     }
+
+    /**
+     * @return array
+     */
+    public function getVars()
+    {
+        return $this->_vars;
+    }
+
+    /**
+     * @return array
+     */
+    public function getFields()
+    {
+        return $this->_fields;
+    }
 }
