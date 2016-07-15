@@ -20,7 +20,7 @@ abstract class Validator
         $this->_vars = $vars;
     }
 
-    protected function _error(
+    public function error(
         string $message,
         string $field = null
     )
