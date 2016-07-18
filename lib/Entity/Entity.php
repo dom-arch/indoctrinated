@@ -326,7 +326,7 @@ abstract class Entity
     }
 
     /** @ORM\PrePersist */
-    public function onBeforePersist() : self
+    public function onBeforePersist()
     {
         $time = Db::getTime() ?? new DateTime();
 
@@ -334,7 +334,7 @@ abstract class Entity
     }
 
     /** @ORM\PreUpdate */
-    public function onBeforeUpdate() : self
+    public function onBeforeUpdate()
     {
         if ($this->getArchivedAt()) {
             return $this;
