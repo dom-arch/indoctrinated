@@ -229,7 +229,7 @@ abstract class Entity
                 continue;
             }
 
-            if (in_array($property, static::$ignoredColumns)) {
+            if (!in_array($property, static::$printables)) {
                 continue;
             }
 
@@ -281,7 +281,7 @@ abstract class Entity
             $method_name = 'get' . ucfirst($property);
             $method = [$this, $method_name];
 
-            if (in_array($property, static::$ignoredColumns)) {
+            if (!in_array($property, static::$printables)) {
                 continue;
             }
 
