@@ -20,6 +20,7 @@
 namespace Indoctrinated\Repository;
 
 use Doctrine\ORM\Tools\EntityRepositoryGenerator;
+use Indoctrinated\Repository;
 
 class Generator
     extends EntityRepositoryGenerator
@@ -36,6 +37,7 @@ class Generator
         $outputDirectory
     )
     {
+        $this->setDefaultRepositoryName(Repository::class);
         $code = $this->generateEntityRepositoryClass($fullClassName);
 
         $paths = explode('\\', $fullClassName);
