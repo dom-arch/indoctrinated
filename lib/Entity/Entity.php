@@ -205,6 +205,14 @@ abstract class Entity
         return $properties;
     }
 
+    public static function getSelectQueryBuilder() : QueryBuilder
+    {
+        return Db::getEntityManager()
+            ->createQueryBuilder()
+            ->select()
+            ->from(static::class, strtolower(static::class));
+    }
+
     public static function fromArray(
         array $data
     ) : self
