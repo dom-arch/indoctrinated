@@ -207,10 +207,12 @@ abstract class Entity
 
     public static function getSelectQueryBuilder() : QueryBuilder
     {
+        $alias = strtolower(static::class);
+        
         return Db::getEntityManager()
             ->createQueryBuilder()
             ->select()
-            ->from(static::class, strtolower(static::class));
+            ->from(static::class, $alias);
     }
 
     public static function fromArray(
