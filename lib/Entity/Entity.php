@@ -188,25 +188,41 @@ abstract class Entity
             ->getRepository(static::class);
     }
 
-    public static function getSelectQueryBuilder() : QueryBuilder
+    public static function getSelectQueryBuilder(
+        bool $existing = true
+    ) : QueryBuilder
     {
         $alias = strtolower(static::class);
 
-        return Db::getEntityManager()
+        $builder = Db::getEntityManager()
             ->createQueryBuilder()
             ->select($alias)
             ->from(static::class, $alias);
+
+        if ($existing) {
+            $builder->andWhere($builder->expr()->isNull($alias . '.archivedAt'));
+        }
+
+        return $builder;
     }
 
-    public static function getCountQueryBuilder() : QueryBuilder
+    public static function getCountQueryBuilder(
+        bool $existing = true
+    ) : QueryBuilder
     {
         $alias = strtolower(static::class);
         $builder = Db::getEntityManager()
             ->createQueryBuilder();
 
-        return $builder
+        $builder
             ->select($builder->expr()->count($alias . '.id'))
             ->from(static::class, $alias);
+
+        if ($existing) {
+            $builder->andWhere($builder->expr()->isNull($alias . '.archivedAt'));
+        }
+
+        return $builder;
     }
 
     public function getOriginalEntityData() : array
@@ -238,9 +254,31 @@ abstract class Entity
         stdClass $object
     ) : self
     {
-        return static::getEntityRepository()
-            ->one()
-            ->fill($object);
+        $properties = static::getFieldNames();
+
+        $instance = static::getEntityRepository()
+            ->one();
+
+        foreach ($object as $property => $value) {
+            $method_name = 'init' . ucfirst($property);
+            $method = [$instance, $method_name];
+
+            if (!in_array($property, $properties)) {
+                continue;
+            }
+
+            if (!in_array($property, static::$printables)) {
+                continue;
+            }
+
+            if (!is_callable($method, true)) {
+                continue;
+            }
+
+            $instance->{$method_name}($value);
+        }
+
+        return $instance;
     }
 
     public function fill(
@@ -250,7 +288,7 @@ abstract class Entity
         $properties = static::getFieldNames();
 
         foreach ($object as $property => $value) {
-            $method_name = 'init' . ucfirst($property);
+            $method_name = 'set' . ucfirst($property);
             $method = [$this, $method_name];
 
             if (!in_array($property, $properties)) {
