@@ -6,6 +6,7 @@
 namespace Indoctrinated;
 
 use DateTime;
+use Doctrine\ORM\QueryBuilder;
 use stdClass;
 
 use Doctrine\ORM\Mapping as ORM;
@@ -187,6 +188,27 @@ abstract class Entity
             ->getRepository(static::class);
     }
 
+    public static function getSelectQueryBuilder() : QueryBuilder
+    {
+        $alias = strtolower(static::class);
+
+        return Db::getEntityManager()
+            ->createQueryBuilder()
+            ->select($alias)
+            ->from(static::class, $alias);
+    }
+
+    public static function getCountQueryBuilder() : QueryBuilder
+    {
+        $alias = strtolower(static::class);
+        $builder = Db::getEntityManager()
+            ->createQueryBuilder();
+
+        return $builder
+            ->select($builder->expr()->count($alias . '.id'))
+            ->from(static::class, $alias);
+    }
+
     public function getOriginalEntityData() : array
     {
         return Db::getEntityManager()
@@ -205,16 +227,6 @@ abstract class Entity
         return $properties;
     }
 
-    public static function getSelectQueryBuilder() : QueryBuilder
-    {
-        $alias = strtolower(static::class);
-        
-        return Db::getEntityManager()
-            ->createQueryBuilder()
-            ->select()
-            ->from(static::class, $alias);
-    }
-
     public static function fromArray(
         array $data
     ) : self
@@ -226,14 +238,20 @@ abstract class Entity
         stdClass $object
     ) : self
     {
-        $properties = static::getFieldNames();
+        return static::getEntityRepository()
+            ->one()
+            ->fill($object);
+    }
 
-        $instance = static::getEntityRepository()
-            ->one();
+    public function fill(
+        stdClass $object
+    )
+    {
+        $properties = static::getFieldNames();
 
         foreach ($object as $property => $value) {
             $method_name = 'init' . ucfirst($property);
-            $method = [$instance, $method_name];
+            $method = [$this, $method_name];
 
             if (!in_array($property, $properties)) {
                 continue;
@@ -247,10 +265,10 @@ abstract class Entity
                 continue;
             }
 
-            $instance->{$method_name}($value);
+            $this->{$method_name}($value);
         }
 
-        return $instance;
+        return $this;
     }
 
     public static function create() : self
