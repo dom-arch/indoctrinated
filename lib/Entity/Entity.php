@@ -391,7 +391,10 @@ abstract class Entity
         return json_encode($this->toObject());
     }
 
-    /** @ORM\PrePersist */
+    /**
+     * @ORM\PrePersist
+     * @return $this|Entity
+     */
     public function onBeforePersist()
     {
         $time = Db::getTime() ?? new DateTime();
@@ -399,8 +402,12 @@ abstract class Entity
         return $this->initCreatedAt($time);
     }
 
-    /** @ORM\PreUpdate */
-    public function onBeforeUpdate()
+    /**
+     * @ORM\PreUpdate
+     * @param PreUpdateEventArgs $event
+     * @return $this|Entity
+     */
+    public function onBeforeUpdate(PreUpdateEventArgs $event)
     {
         if ($this->getArchivedAt()) {
             return $this;
