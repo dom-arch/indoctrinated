@@ -6,6 +6,7 @@
 namespace Indoctrinated;
 
 use DateTime;
+use Exception;
 
 use Indoctrinated\Tools\Console\ConsoleRunner;
 use Doctrine\ORM\EntityManager;

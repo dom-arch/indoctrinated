@@ -6,6 +6,8 @@
 namespace Indoctrinated;
 
 use DateTime;
+use Doctrine\ORM\Event\PreUpdateEventArgs;
+use Doctrine\ORM\PersistentCollection;
 use Doctrine\ORM\QueryBuilder;
 use stdClass;
 
@@ -334,22 +336,18 @@ abstract class Entity
 
     public function toArray() : array
     {
-        return (array) $this->toObject();
+        return json_decode(json_encode($this->toObject()), true);
     }
 
     public function toObject() : stdClass
     {
-        $properties = static::getFieldNames();
+        $properties = static::$printables;
 
         $std = new stdClass();
 
         foreach ($properties as $property) {
             $method_name = 'get' . ucfirst($property);
             $method = [$this, $method_name];
-
-            if (!in_array($property, static::$printables)) {
-                continue;
-            }
 
             if (!is_callable($method, true)) {
                 continue;
@@ -373,9 +371,31 @@ abstract class Entity
                 continue;
             }
 
-            if (gettype($value) === 'object' && $value instanceof DateTime) {
+            if (gettype($value) !== 'object') {
+                $std->{$property} = $value;
+            }
+
+            if ($value instanceof DateTime) {
                 $timestamp = $value->getTimestamp();
                 $std->{$property} = gmdate('Y-m-d H:i:s', $timestamp);
+
+                continue;
+            }
+
+            if ($value instanceof self) {
+                $std->{$property} = $value->toObject();
+
+                continue;
+            }
+
+            if ($value instanceof PersistentCollection) {
+                $children = [];
+
+                foreach ($value as $child_key => $child_value) {
+                    $children[$child_key] = $child_value->toObject();
+                }
+
+                $std->{$property} = $children;
 
                 continue;
             }
@@ -391,10 +411,7 @@ abstract class Entity
         return json_encode($this->toObject());
     }
 
-    /**
-     * @ORM\PrePersist
-     * @return $this|Entity
-     */
+    /** @ORM\PrePersist */
     public function onBeforePersist()
     {
         $time = Db::getTime() ?? new DateTime();

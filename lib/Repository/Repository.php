@@ -44,7 +44,7 @@ class Repository
 
         return $this
             ->createQueryBuilder('counter')
-            ->select('COUNT(counter)')
+            ->select('COUNT(c)')
             ->from(static::getEntityName(), 'c')
             ->setParameters($parameters)
             ->getQuery()
