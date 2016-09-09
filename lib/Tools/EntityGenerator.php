@@ -126,10 +126,6 @@ public function <methodName>(
 <spaces><spaces>return $this-><fieldName>;
 <spaces>}
 
-<spaces>if (is_callable($<variableName>)) {
-<spaces><spaces>return $<variableName>();
-<spaces>}
-
 <spaces>return $<variableName>;
 }';
     /**
@@ -149,10 +145,6 @@ public function <methodName>(
 {
 <spaces>if ($this-><fieldName> !== null) {
 <spaces><spaces>return $this;
-<spaces>}
-
-<spaces>if (is_callable($<variableName>)) {
-<spaces><spaces>return $this-><setterName>($<variableName>());
 <spaces>}
 
 <spaces>return $this-><setterName>($<variableName>);
