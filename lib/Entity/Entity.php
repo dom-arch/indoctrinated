@@ -77,10 +77,6 @@ abstract class Entity
             return $this;
         }
 
-        if (is_callable($created_at)) {
-            return $this->setCreatedAt($created_at());
-        }
-
         return $this->setCreatedAt($created_at);
     }
 
@@ -90,10 +86,6 @@ abstract class Entity
     {
         if ($this->createdAt !== null) {
             return $this->createdAt;
-        }
-
-        if (is_callable($created_at)) {
-            return $created_at();
         }
 
         return $created_at;
@@ -116,10 +108,6 @@ abstract class Entity
             return $this;
         }
 
-        if (is_callable($updated_at)) {
-            return $this->setUpdatedAt($updated_at());
-        }
-
         return $this->setUpdatedAt($updated_at);
     }
 
@@ -129,10 +117,6 @@ abstract class Entity
     {
         if ($this->updatedAt !== null) {
             return $this->updatedAt;
-        }
-
-        if (is_callable($updated_at)) {
-            return $updated_at();
         }
 
         return $updated_at;
@@ -155,10 +139,6 @@ abstract class Entity
             return $this;
         }
 
-        if (is_callable($archived_at)) {
-            return $this->setArchivedAt($archived_at());
-        }
-
         return $this->setArchivedAt($archived_at);
     }
 
@@ -168,10 +148,6 @@ abstract class Entity
     {
         if ($this->archivedAt !== null) {
             return $this->archivedAt;
-        }
-
-        if (is_callable($archived_at)) {
-            return $archived_at();
         }
 
         return $archived_at;
