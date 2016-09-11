@@ -23,7 +23,7 @@ use Doctrine\ORM\Tools\Console\MetadataFilter;
 use Doctrine\ORM\Tools\DisconnectedClassMetadataFactory;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Input\InputInterface;
-use Indoctrinated\Tools\EntityGenerator;
+use Indoctrinated\Entity\Generator as EntityGenerator;
 use Indoctrinated\Tools\Console;
 
 class GenerateEntitiesCommand

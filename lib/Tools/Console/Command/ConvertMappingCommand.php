@@ -25,7 +25,7 @@ use Doctrine\ORM\Mapping\Driver\DatabaseDriver;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Command\Command;
-use Indoctrinated\Tools\EntityGenerator;
+use Indoctrinated\Entity\Generator as EntityGenerator;
 
 /**
  * Command to convert your mapping information between the various formats.
@@ -67,11 +67,11 @@ class ConvertMappingCommand
         $metadata = MetadataFilter::filter($metadata, $input->getOption('filter'));
 
         $destPath = $input->getArgument('dest-path');
+        $traitsPath = $destPath . '/Traits';
 
         $paths = [
             'destPath' => $destPath,
-            'traitsPath' => $destPath . '/Traits',
-            'validatorsPath' => $destPath . '/Validators'
+            'traitsPath' => $traitsPath
         ];
 
         foreach ($paths as $name => $path) {
@@ -115,15 +115,10 @@ class ConvertMappingCommand
             foreach ($metadata as $class) {
                 $class->name = $class->table['name'];
                 $traitPath = $traitsPath . '/' . $class->name . '.php';
-                $validatorPath = $validatorsPath . '/' . $class->name . '.php';
 
                 if (isset($entityGenerator)) {
                     if (!is_file($traitPath)) {
                         file_put_contents($traitPath, $entityGenerator->generateEntityTrait($class));
-                    }
-
-                    if (!is_file($validatorPath)) {
-                        file_put_contents($validatorPath, $entityGenerator->generateEntityValidator($class));
                     }
                 }
 

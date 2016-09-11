@@ -410,14 +410,4 @@ abstract class Entity
 
         return $this->setUpdatedAt($time);
     }
-
-    public function validate()
-    {
-        $Validator = 'Validators\\' . static::class;
-        $vars = get_object_vars($this);
-        $fields = static::getFieldNames();
-        $validator = new $Validator($vars, $fields);
-
-        return $validator->validate();
-    }
 }
