@@ -23,6 +23,7 @@ use Doctrine\ORM\Mapping\ClassMetadataInfo;
 use Doctrine\Common\Util\Inflector;
 use Doctrine\DBAL\Types\Type;
 use Doctrine\ORM\Mapping\UnderscoreNamingStrategy;
+use Indoctrinated\Db;
 use Indoctrinated\Repository;
 
 /**
@@ -44,6 +45,8 @@ use Indoctrinated\Repository;
 class Generator
     extends \Doctrine\ORM\Tools\EntityGenerator
 {
+    private $_tables;
+
     /**
      * @var string
      */
@@ -128,6 +131,7 @@ public function <methodName>(
 
 <spaces>return $<variableName>;
 }';
+
     /**
      * @var string
      */
@@ -140,7 +144,7 @@ public function <methodName>(
  * @return <entity>
  */
 public function <methodName>(
-<spaces><variableType>$<variableName><variableDefault>
+<spaces><methodTypeHint> $<variableName><variableDefault>
 )
 {
 <spaces>if ($this-><fieldName> !== null) {
@@ -149,6 +153,7 @@ public function <methodName>(
 
 <spaces>return $this-><setterName>($<variableName>);
 }';
+
     /**
      * @var string
      */
@@ -161,7 +166,7 @@ public function <methodName>(
  * @return <entity>
  */
 public function <methodName>(
-<spaces><methodTypeHint>$<variableName><variableDefault>
+<spaces><methodTypeHint> $<variableName><variableDefault>
 )
 {
 <spaces>$this-><fieldName> = $<variableName>;
@@ -204,6 +209,68 @@ public function <methodName>(
 {
 <spaces>$this-><fieldName>->removeElement($<variableName>);
 }';
+
+    public function __construct()
+    {
+        $tables = [];
+
+        $schema_manager = Db::getEntityManager()
+            ->getConnection()
+            ->getSchemaManager();
+
+        foreach ($schema_manager->listTableNames() as $table_name) {
+            $key = strtolower($table_name);
+            $tables[$key] = [
+                'name' => $table_name
+            ];
+
+            $columns = [];
+
+            foreach ($schema_manager->listTableColumns($table_name) as $column) {
+                $column_name = $column->getName();
+
+                $columns[strtolower($column_name)] = [
+                    'name' => $column_name
+                ];
+            }
+
+            $tables[$key]['columns'] = $columns;
+        }
+
+        $this->_tables = $tables;
+
+        parent::__construct();
+    }
+
+    private function _getEntityName($entity_name)
+    {
+        $table = $this->_tables[strtolower($entity_name)];
+
+        if (!$table) {
+            return null;
+        }
+
+        return $table['name'];
+    }
+
+    private function _getColumnName($entity_name, $column_name)
+    {
+        $table = $this->_tables[strtolower($entity_name)];
+
+        if (!$table) {
+            return null;
+        }
+
+        $column = $table['columns'][strtolower($column_name)] ?? null;
+
+        if (!$column) {
+
+            echo debug_backtrace()[1]['function'];exit;
+            return null;
+        }
+
+        return $column['name'];
+    }
 
     /**
      * @param ClassMetadataInfo $metadata
@@ -404,18 +471,15 @@ public function <methodName>(
         return implode("\n\n", $methods);
     }
 
-    /**
-     * @param ClassMetadataInfo $metadata
-     *
-     * @return string
-     */
     protected function generateEntityFieldMappingProperties(ClassMetadataInfo $metadata)
     {
         $lines = array();
 
         foreach ($metadata->fieldMappings as $fieldMapping) {
-            if ($this->hasProperty($fieldMapping['columnName'], $metadata) ||
-                $metadata->isInheritedField($fieldMapping['columnName']) ||
+            $column_name = $this->_getColumnName($metadata->getName(), $fieldMapping['fieldName']);
+
+            if ($this->hasProperty($column_name, $metadata) ||
+                $metadata->isInheritedField($column_name) ||
                 (
                     isset($fieldMapping['declaredField']) &&
                     isset($metadata->embeddedClasses[$fieldMapping['declaredField']])
@@ -425,7 +489,7 @@ public function <methodName>(
             }
 
             $lines[] = $this->generateFieldMappingPropertyDocBlock($fieldMapping, $metadata);
-            $lines[] = $this->spaces . $this->fieldVisibility . ' $' . $fieldMapping['columnName']
+            $lines[] = $this->spaces . $this->fieldVisibility . ' $' . $column_name
                 . (isset($fieldMapping['options']['default']) ? ' = ' . var_export($fieldMapping['options']['default'], true) : null) . ";\n";
         }
 
@@ -437,28 +501,35 @@ public function <methodName>(
      *
      * @return string
      */
+
     protected function generateEntityAssociationMappingProperties(ClassMetadataInfo $metadata)
     {
         $lines = array();
 
-        foreach ($metadata->associationMappings as $associationMapping) {
-            $property_name = $associationMapping['targetToSourceKeyColumns']['id'] ?? null;
+        foreach ($metadata->associationMappings as $mapping) {
+            if ($mapping['type'] === 2) {
+                $property_name = lcfirst(Inflector::singularize($this->_getEntityName($mapping['targetEntity'])));
+                $property_identifier = $property_name . 'Id';
 
-            if (!$property_name && isset($associationMapping['inversedBy']) && $associationMapping['inversedBy']) {
-                $property_name = Inflector::pluralize(lcfirst($associationMapping['targetEntity']));
-            }
-
-            if (!$property_name) {
-                $property_name = lcfirst($associationMapping['targetEntity']);
+                if (!$this->hasProperty($property_identifier, $metadata)) {
+                    $lines[] = '    /**';
+                    $lines[] = '     * @var integer';
+                    $lines[] = '     *';
+                    $lines[] = '     * @ORM\Column(name="' . $property_identifier . '", type="integer", nullable=true)';
+                    $lines[] = '     */';
+                    $lines[] = '    protected $' . $property_identifier . ';' . "\n";
+                }
+            } else {
+                $property_name = lcfirst($this->_getEntityName($mapping['targetEntity']));
             }
 
             if ($this->hasProperty($property_name, $metadata)) {
                 continue;
             }
 
-            $lines[] = $this->generateAssociationMappingPropertyDocBlock($associationMapping, $metadata);
+            $lines[] = $this->generateAssociationMappingPropertyDocBlock($mapping, $metadata);
             $lines[] = $this->spaces . $this->fieldVisibility . ' $' . $property_name
-                . ($associationMapping['type'] == 'manyToMany' ? ' = array()' : null) . ";\n";
+                . ($mapping['type'] == 'manyToMany' ? ' = array()' : null) . ";\n";
         }
 
         return implode("\n", $lines);
@@ -542,15 +613,7 @@ public function <methodName>(
         if ($associationMapping['type'] & ClassMetadataInfo::TO_MANY) {
             $lines[] = $this->spaces . ' * @var \Doctrine\Common\Collections\Collection';
         } else {
-            $column_name = strtolower(Inflector::singularize($associationMapping['targetEntity']) . 'Id');
-
-            foreach ($associationMapping['joinColumns'] as $column) {
-                if (strtolower($column['name']) === $column_name) {
-                    $target_entity = ucfirst(Inflector::pluralize(substr($column['name'], 0, -2)));
-
-                    break;
-                }
-            }
+            $target_entity = $this->_getEntityName($associationMapping['targetEntity']);
 
             $lines[] = $this->spaces . ' * @var \\' . $target_entity;
         }
@@ -584,28 +647,16 @@ public function <methodName>(
             $typeOptions = array();
 
             if (isset($associationMapping['targetEntity'])) {
-                $target_entity = $associationMapping['targetEntity'];
-                $column_name = strtolower(Inflector::singularize($target_entity) . 'Id');
-
-                foreach ($associationMapping['joinColumns'] as $column) {
-                    if (strtolower($column['name']) === $column_name) {
-                        $target_entity = ucfirst(Inflector::pluralize(substr($column['name'], 0, -2)));
-
-                        break;
-                    }
-                }
+                $target_entity = $this->_getEntityName($associationMapping['targetEntity']);
 
                 $typeOptions[] = 'targetEntity="' . $target_entity . '"';
             }
 
             if (isset($associationMapping['inversedBy'])) {
-                $field_name = $associationMapping['inversedBy'];
-                $column_name = $field_name;
-
                 foreach ($associationMapping['joinTable']['joinColumns'] as $column) {
-                    if (strtolower($column['name']) == $field_name) {
-                        $column_name = $column['name'];
+                    $column_name = $column['name'];
 
+                    if (strtolower($column_name) === $associationMapping['inversedBy']) {
                         break;
                     }
                 }
@@ -614,7 +665,7 @@ public function <methodName>(
             }
 
             if (isset($associationMapping['mappedBy'])) {
-                $column_name = Inflector::singularize(lcfirst($associationMapping['targetEntity'])) . 'Id';
+                $column_name = lcfirst(Inflector::singularize($associationMapping['sourceEntity'])) . 'Id';
 
                 $typeOptions[] = 'mappedBy="' . $column_name . '"';
             }
@@ -667,7 +718,8 @@ public function <methodName>(
 
             if (isset($associationMapping['joinTable']) && $associationMapping['joinTable']) {
                 $joinTable = array();
-                $joinTable[] = 'name="' . $associationMapping['joinTable']['name'] . '"';
+                $entity_name = $this->_getEntityName($associationMapping['joinTable']['name']);
+                $joinTable[] = 'name="' . $entity_name . '"';
 
                 if (isset($associationMapping['joinTable']['schema'])) {
                     $joinTable[] = 'schema="' . $associationMapping['joinTable']['schema'] . '"';
@@ -733,7 +785,8 @@ public function <methodName>(
 
         foreach ($metadata->associationMappings as $mapping) {
             if ($mapping['type'] & ClassMetadataInfo::TO_MANY) {
-                $property_name = Inflector::pluralize(lcfirst($mapping['targetEntity']));
+                $column_name = $this->_getEntityName($mapping['targetEntity']);
+                $property_name = lcfirst(Inflector::pluralize($column_name));
 
                 $collections[] = '$this->'.$property_name.' = new \Doctrine\Common\Collections\ArrayCollection();';
             }
